@@ -1,12 +1,36 @@
-# Thread Logging Workflow
+# Thread Logging & Equivalent Exchange Workflow
 
-Protocol for engineering threads capturing their post-implementation insights:
+This workflow guides agents in paying their knowledge debt (the Tithe) at the conclusion of every implementation thread.
 
-1. **Trigger**: When a feature, bugfix, or refactor has completed code edits and verified tests.
-2. **Drafting**: Copy `templates/THREAD_TEMPLATE.md` to `.agents/threads/thread_<topic>.md`.
-3. **Execution**:
-   - Fill in **Pillar 1** by grading previous advice used in the thread (`VALIDATED`, `FAILED`, `SITUATIONAL`, `INSUFFICIENT DATA`).
-   - Fill in **Pillar 2** with any non-obvious reality or code pattern uncovered.
-   - Fill in **Pillar 3** with broken approaches, explaining why they failed.
-   - Fill in **Pillar 4** with exact numerical bounds and commands to reproduce.
-4. **Commit**: Commit the thread retrospective alongside your work or as a dedicated handoff commit.
+---
+
+## The Zero-Distraction Principle
+Agents must NEVER spend attention or context worrying about retrospective logging while in the middle of code writing, debugging, or test verification. 
+
+1. **Phase 1: Code & Verify**: Deliver clean, working code. Run tests. Ensure build succeeds.
+2. **Phase 2: The Tithe**: Only after Phase 1 succeeds, execute the tithe protocol below.
+
+---
+
+## Step-by-Step Tithe Execution
+
+### 1. Scaffold Retrospective
+Run the zero-token scaffold command:
+```bash
+python3 scripts/agg.py tithe --topic <feature_name> --domain <DomainName>
+```
+This reads the git status and diff automatically, creating `.agents/threads/thread_<topic>.md`.
+
+### 2. Fill the 4 Pillars
+Open the scaffolded file and record the empirical observations:
+- **Pillar 1 (Aggregate Feedback)**: Did the rules you borrowed hold up? Mark as `VALIDATED`, `FAILED`, `SITUATIONAL`, or `INSUFFICIENT DATA`.
+- **Pillar 2 (Novel Discoveries)**: What hidden behavior or runtime quirk did you discover? Include exact line pointers: `src/foo.py:L45-L60`.
+- **Pillar 3 (Anti-Patterns / Prohibited)**: What attempt failed? What is the mandated alternative?
+- **Pillar 4 (Invariants & Benchmarks)**: What latency/memory/security boundary was maintained? Provide the exact bash reproduction command.
+
+### 3. Commit
+Commit the thread retrospective alongside your implementation commit or as a dedicated handoff commit:
+```bash
+git add .agents/threads/thread_<topic>.md
+git commit -m "docs(aggregate): record thread retrospective for <topic>"
+```

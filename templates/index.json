@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "domains": {
+    "engine": {
+      "path": ".agents/knowledge/engine.md",
+      "keywords": ["core", "worker", "process", "async", "event", "loop", "state"],
+      "file_patterns": ["src/core/**", "src/engine/**", "app/services/**"]
+    },
+    "storage": {
+      "path": ".agents/knowledge/storage.md",
+      "keywords": ["database", "sqlite", "postgres", "redis", "query", "migration", "wal", "disk"],
+      "file_patterns": ["src/db/**", "src/storage/**", "models/**", "migrations/**"]
+    },
+    "ui": {
+      "path": ".agents/knowledge/ui.md",
+      "keywords": ["terminal", "textual", "cli", "render", "widget", "screen", "css", "layout"],
+      "file_patterns": ["src/ui/**", "src/views/**", "components/**"]
+    },
+    "security": {
+      "path": ".agents/knowledge/security.md",
+      "keywords": ["auth", "token", "crypto", "ssrf", "jwt", "credential", "secret", "permission"],
+      "file_patterns": ["src/auth/**", "src/security/**"]
+    }
+  },
+  "anti_patterns": [
+    {
+      "title": "Unbounded Markdown Streaming",
+      "domain": "ui",
+      "keywords": ["stream", "markdown", "textual", "buffer", "crash"],
+      "why_failed": "Passing raw stream chunks directly to Markdown render triggers NoneType region calculation exceptions.",
+      "replacement": "Buffer incoming tokens with a 50ms coalesce debounce before updating widget."
+    },
+    {
+      "title": "Direct DB Calls in Event Loop",
+      "domain": "storage",
+      "keywords": ["blocking", "sqlite", "sync", "freeze", "event_loop"],
+      "why_failed": "Synchronous SQLite calls on the main thread block UI event dispatching and cause UI freezing.",
+      "replacement": "Execute all disk queries inside an async threadpool or use a dedicated database worker."
+    }
+  ]
+}

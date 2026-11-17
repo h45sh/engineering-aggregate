@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EngineeringAggregateIndex",
+  "description": "Schema for index.json used by scripts/agg.py to route ancestral inheritance and anti-patterns with zero token overhead.",
+  "type": "object",
+  "properties": {
+    "domains": {
+      "type": "object",
+      "description": "Mapping of domain names to their knowledge files, keywords, and path patterns.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path to the domain knowledge markdown file."
+          },
+          "keywords": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Trigger keywords extracted from prompts or file names."
+          },
+          "file_patterns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Glob patterns matching repository source paths."
+          }
+        },
+        "required": ["path", "keywords"]
+      }
+    },
+    "anti_patterns": {
+      "type": "array",
+      "description": "Fast-lookup anti-pattern catalog for proactive warning injection.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "domain": { "type": "string" },
+          "keywords": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "why_failed": { "type": "string" },
+          "replacement": { "type": "string" }
+        },
+        "required": ["title", "why_failed", "replacement"]
+      }
+    }
+  },
+  "required": ["domains", "anti_patterns"]
+}
