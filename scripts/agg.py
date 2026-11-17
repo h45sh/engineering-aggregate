@@ -341,6 +341,80 @@ def cmd_test(args):
         sys.exit(1)
 
 
+def cmd_harvest_t3(args):
+    """
+    Scans ~/.t3/caches/pull-requests/ to harvest PR metadata, feature branches,
+    and reviews for a target repository, outputting a retrospective draft.
+    """
+    import glob
+    cache_dir = Path.home() / ".t3" / "caches" / "pull-requests"
+    if not cache_dir.exists():
+        print(f"[Error]: T3 pull-requests cache not found at '{cache_dir}'.")
+        return
+
+    repo_filter = args.repo.lower() if args.repo else None
+    harvested = []
+
+    for f in cache_dir.glob("pr-v2*"):
+        try:
+            with open(f, "r", encoding="utf-8") as fp:
+                data = json.load(fp)
+                if isinstance(data, list) and len(data) > 0:
+                    val = data[0].get("value", {})
+                    payload_str = val.get("payload")
+                    if payload_str:
+                        payload = json.loads(payload_str)
+                        r = payload.get("repository", "")
+                        if not repo_filter or (repo_filter in r.lower()):
+                            # Filter out automated bot bumps
+                            if not payload.get("author", {}).get("isBot", False):
+                                harvested.append(payload)
+        except Exception:
+            pass
+
+    harvested.sort(key=lambda x: x.get("number", 0))
+    print(f"=== HARVESTED {len(harvested)} PULL REQUESTS FROM T3 CACHE ===")
+
+    THREADS_DIR.mkdir(parents=True, exist_ok=True)
+    out_file = THREADS_DIR / "thread_t3_harvest.md"
+
+    md_lines = [
+        "# Thread Retrospective: T3 Cache Historical Harvest",
+        "",
+        f"- **Repository Target**: `{args.repo or 'All'}`",
+        f"- **Total PRs Harvested**: `{len(harvested)}`",
+        "",
+        "---",
+        "",
+        "## Harvested Feature & Fix Sprints",
+        "",
+        "| PR # | Title | Branch Flow | State |",
+        "| :---: | :--- | :--- | :---: |"
+    ]
+
+    for pr in harvested:
+        num = pr.get("number")
+        title = pr.get("title", "").replace("|", "-")
+        head = pr.get("headBranch", "")
+        base = pr.get("baseBranch", "")
+        state = pr.get("state", "")
+        md_lines.append(f"| #{num} | {title} | `{head}` → `{base}` | **{state.upper()}** |")
+
+    md_lines.extend([
+        "",
+        "---",
+        "",
+        "## Key Solved Regressions & Invariant Candidates",
+        "",
+        "Review the PR titles above to extract verified techniques into `.agents/knowledge/<domain>.md` and anti-patterns into `.agents/knowledge/anti-patterns.md`.",
+        ""
+    ])
+
+    out_file.write_text("\n".join(md_lines), encoding="utf-8")
+    print(f"✅ Harvest report generated at: {out_file}")
+    print("Agent instruction: Review and extract the confirmed techniques and timing invariants into domain knowledge files.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="engineering-aggregate command engine")
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
@@ -365,6 +439,10 @@ def main():
     # test
     p_test = subparsers.add_parser("test", help="Run self-testing suite for CLI and tools")
 
+    # harvest-t3
+    p_harvest = subparsers.add_parser("harvest-t3", help="Harvest PRs and reviews from ~/.t3/caches/")
+    p_harvest.add_argument("--repo", type=str, help="Repository name filter (e.g. h45sh/cyguide)")
+
     args = parser.parse_args()
     if args.subcommand == "inherit":
         cmd_inherit(args)
@@ -376,6 +454,8 @@ def main():
         cmd_sync(args)
     elif args.subcommand == "test":
         cmd_test(args)
+    elif args.subcommand == "harvest-t3":
+        cmd_harvest_t3(args)
 
 
 if __name__ == "__main__":
