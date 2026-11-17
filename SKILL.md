@@ -53,57 +53,52 @@ The system ensures that non-feature engineering disciplines never degrade:
 
 ---
 
-## 2. Autonomous Operational Protocol for Agents
+## 2. Autonomous Operational Protocol for Agents (Zero-Bloat & Low-Latency)
 
-Agents must execute these automated steps during their lifecycle:
+Agents follow a streamlined, token-budgeted cycle designed to prevent context window bloat and eliminate multi-step round-trip churn:
 
 ```text
  ┌────────────────────────────────────────────────────────────────────────┐
- │                      THE AUTONOMOUS AGENT CYCLE                        │
+ │                   THE ZERO-BLOAT AGENT LIFECYCLE                       │
  │                                                                        │
- │   1. CLAIM INHERITANCE          2. EXECUTE TASK        3. PAY TITHE    │
- │  ┌───────────────────────┐     ┌──────────────┐     ┌────────────────┐ │
- │  │ python3 scripts/agg.py│────►│ Write Code   │────►│ python3 scripts│ │
- │  │ inherit --files ...   │     │ & Run Tests  │     │ /agg.py tithe  │ │
- │  └───────────────────────┘     └──────────────┘     └───────┬────────┘ │
- │                                                             │          │
- │                                                             ▼          │
- │                                4. CONDENSE INTELLIGENCE                │
- │                               ┌─────────────────────────┐              │
- │                               │ Fill 4 pillars & run    │              │
- │                               │ python3 scripts/agg.py  │              │
- │                               │ condense                │              │
- │                               └─────────────────────────┘              │
+ │   1. PRE-FLIGHT (Compact)        2. EXECUTE TASK      3. ONE-SHOT TITHE│
+ │  ┌─────────────────────────┐    ┌──────────────┐    ┌────────────────┐ │
+ │  │ python3 scripts/agg.py  │───►│ Write Code   │───►│ python3 scripts│ │
+ │  │ inherit --compact ...   │    │ & Run Tests  │    │ /agg.py        │ │
+ │  │ (<150 tokens, 1 round)  │    │              │    │ quick-tithe ...│ │
+ │  └─────────────────────────┘    └──────────────┘    └────────────────┘ │
+ │                                                     (Atomic <50ms,     │
+ │                                                      Zero round-trips) │
  └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 1: Pre-Flight Inheritance (Task Startup)
-Before proposing or making changes, claim your inheritance:
+When touching architectural components, core models, or security boundaries, claim a high-density, token-budgeted brief:
 ```bash
-python3 scripts/agg.py inherit --files <paths_to_touch> --query "<task_keywords>"
+python3 scripts/agg.py inherit --compact --files <paths_to_touch> --query "<task_keywords>"
 ```
-*Review the brief in standard output: honor the architectural invariants, security rules, and prohibited anti-patterns.*
+- **Context Protection**: `--compact` emits single-line bullet invariants ($\le 150$ tokens) rather than raw file dumps.
+- **Gated Execution**: For trivial questions, documentation reads, or typo fixes, **skip inheritance** to preserve context.
 
 ### Step 2: Implementation (Pure Focus)
-Execute the requested user feature, bugfix, security patch, or refactor. Focus 100% on delivering clean code and passing tests. **Do not let documentation or retrospective debt distract you during coding.**
+Execute the requested feature, bugfix, security patch, or refactor. Focus 100% on delivering clean code and passing tests. **Do not let documentation or retrospective debt distract you during coding.**
 
-### Step 3: Paying the Tithe (Post-Implementation)
-Once code and tests are verified, auto-scaffold the retrospective:
+### Step 3: Paying the Tithe (Post-Implementation — One-Shot Atomic)
+Once tests pass, pay the tithe in **one single command** without conversational round-trip churn:
 ```bash
-python3 scripts/agg.py tithe --topic <feature_or_bug_name> --domain <UI|Storage|Engine|Auth|Security|Refactor>
+python3 scripts/agg.py quick-tithe --summary "<1-line summary>" --domain <UI|Storage|Engine|Auth|Security|Refactor> --validated "<rules_confirmed>" --trap "<what_failed_if_any>"
 ```
-Open the generated `.agents/threads/thread_<topic>.md` and complete the **4 Pillars**:
-1. **Pillar 1 (Feedback)**: Grade previously inherited advice (`VALIDATED`, `FAILED`, `SITUATIONAL`, `INSUFFICIENT DATA`).
-2. **Pillar 2 (Novel Discoveries)**: Note non-obvious runtime realities with exact file references (`path/to/file.py:L12-L34`).
-3. **Pillar 3 (Anti-Patterns)**: Document what failed, why it broke, and the correct replacement.
-4. **Pillar 4 (Invariants & Contracts)**: Specify quantitative benchmarks (RAM, latency) and exact reproduction commands.
-
-### Step 4: Knowledge Condensation & Self-Testing
-Run the algorithmic auditor to ensure line budgets, reference integrity, and self-tests pass:
-```bash
-python3 scripts/agg.py condense
-python3 scripts/agg.py test
-```
+- **What happens automatically in $<50$ms:**
+  1. Scaffolds and populates `.agents/threads/thread_<topic>.md` with all 4 Pillars.
+  2. Registers any real anti-pattern into `.agents/knowledge/anti-patterns.md`.
+  3. Synchronizes domain files into `index.json`.
+  4. Runs budget checks and link audits silently.
+- **For Background Execution / Subagents**:
+  If running via an async subagent or git hook, run:
+  ```bash
+  python3 scripts/agg.py auto-tithe
+  ```
+  This extracts the summary and modified files directly from `git log`/`git diff`, keeping the main conversational context 100% clean!
 
 ---
 
