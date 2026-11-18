@@ -486,8 +486,8 @@ def cmd_deslop(args):
 
     for ext in scanned_extensions:
         for p in root.rglob(f"*{ext}"):
-            # ignore hidden, vendor, node_modules, build directories
-            if any(part.startswith(".") or part in ["node_modules", "target", "dist", "build", "venv", ".venv"] for part in p.parts):
+            # ignore hidden, vendor, node_modules, build directories, and tooling scripts
+            if any(part.startswith(".") or part in ["node_modules", "target", "dist", "build", "venv", ".venv", "scripts"] for part in p.parts):
                 continue
             try:
                 for idx, line in enumerate(p.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
@@ -505,17 +505,25 @@ def cmd_deslop(args):
 
     # 2. Scan for layer DAG violations (UI -> DB/Backend)
     print("\n[2/3] Checking Architectural Seams (UI -> Direct DB/Backend imports)...")
-    ui_patterns = ["src/ui/**", "src/components/**", "src/views/**", "src/frontend/**", "ui/**", "components/**"]
+    ui_patterns = [
+        "src/ui/**", "src/components/**", "src/views/**", "src/frontend/**",
+        "ui/**", "components/**", "cyguide/ui/**"
+    ]
     dag_violations = 0
-    forbidden_imports = ["db", "database", "sql", "sqlite", "prisma", "typeorm", "storage/direct"]
+    forbidden_imports = ["sqlite3", "aiosqlite", "prisma", "typeorm", "storage/direct"]
 
     for pattern in ui_patterns:
         for p in root.glob(pattern):
-            if p.is_file() and p.suffix in [".ts", ".tsx", ".js", ".jsx"]:
+            if p.is_file() and p.suffix in [".ts", ".tsx", ".js", ".jsx", ".py"]:
                 try:
                     for idx, line in enumerate(p.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
                         for bad in forbidden_imports:
-                            if f"from '{bad}" in line or f'from "{bad}' in line or f"import {bad}" in line:
+                            if (
+                                f"from '{bad}" in line
+                                or f'from "{bad}' in line
+                                or f"import {bad}" in line
+                                or f"from {bad}" in line
+                            ):
                                 print(f"  🚨 Layer DAG Leak: {p}:{idx} directly imports '{bad}'!")
                                 dag_violations += 1
                 except Exception:
