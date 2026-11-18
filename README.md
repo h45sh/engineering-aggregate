@@ -7,13 +7,33 @@
 
 ---
 
+## 🚀 Quick Install (1-Command from GitHub)
+
+You can install or update `engineering-aggregate` globally across any machine with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/h45sh/engineering-aggregate/main/scripts/install.sh | bash
+```
+
+Or via `npx skills`:
+```bash
+npx skills add h45sh/engineering-aggregate -g -y
+```
+
+### What this does:
+1. Clones/updates the skill into `~/.agents/skills/engineering-aggregate`.
+2. Automatically links it into all active AI agent providers (T3 Code, Antigravity, Claude, Codex).
+3. Runs the internal regression test suite to ensure the environment is healthy.
+
+---
+
 ## The Human Experience: Zero Friction
 
 As a developer, you do **not** need to write retrospectives, inspect token budgets, or run scripts manually.
 1. You chat with your AI agent as usual: *"Add user authentication"*, *"Refactor the database pool"*, *"Audit for SSRF vulnerabilities"*.
-2. The agent autonomously borrows intelligence at the start via `scripts/agg.py inherit`.
+2. The agent autonomously borrows intelligence at the start via `scripts/agg.py inherit --compact`.
 3. The agent implements the task, runs benchmarks, and verifies tests.
-4. The agent autonomously files its retrospective tithe via `scripts/agg.py tithe` before finishing.
+4. The agent autonomously files its retrospective tithe via `scripts/agg.py quick-tithe` before finishing.
 
 ---
 
