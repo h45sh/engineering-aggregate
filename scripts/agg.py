@@ -309,6 +309,26 @@ def cmd_quick_tithe(args):
     trap = getattr(args, "trap", None) or "None observed"
     invariant = getattr(args, "invariant", None) or "Test suite passes without regressions"
 
+    # Pillar 4 Verification Execution Gate (Lauren Tan 70/30 Verification Law)
+    verify_cmd = getattr(args, "verify_cmd", None)
+    verify_status = "Skipped"
+    if verify_cmd:
+        print(f"🔬 [VERIFICATION GATE] Running verification contract: `{verify_cmd}`...")
+        v_res = run_cmd(verify_cmd)
+        # Check actual exit code
+        proc = subprocess.run(verify_cmd, shell=True, text=True, capture_output=True)
+        if proc.returncode != 0:
+            print(f"❌ [VERIFICATION GATE FAILED] Command `{verify_cmd}` failed with exit code {proc.returncode}!")
+            if proc.stderr:
+                print(f"Error output:\n{proc.stderr.strip()[:500]}")
+            if not getattr(args, "force", False):
+                print("Aborting tithe: Code does not satisfy quantitative verification invariant. Fix code or run with --force.")
+                sys.exit(1)
+            verify_status = f"FAILED (exit code {proc.returncode})"
+        else:
+            print("✅ [VERIFICATION GATE PASSED] Invariant verified mathematically/empirically.")
+            verify_status = "PASSED (exit code 0)"
+
     content = f"""# Thread Retrospective: {topic}
 
 - **Branch / PR**: `{branch}` (Commit `{commit}`)
@@ -340,9 +360,9 @@ def cmd_quick_tithe(args):
 ---
 
 ## Pillar 4: Invariants & Performance Contracts to Preserve
-| Contract / Invariant | Threshold / Guarantee | Verification Command |
-| :--- | :--- | :--- |
-| {invariant} | Zero Regressions | `agg.py test` or project test suite |
+| Contract / Invariant | Threshold / Guarantee | Verification Command | Gate Status |
+| :--- | :--- | :--- | :--- |
+| {invariant} | Zero Regressions | `{verify_cmd or 'agg.py test'}` | **{verify_status}** |
 
 ---
 """
@@ -428,11 +448,103 @@ def cmd_condense(args):
                     print(f"⚠️  Dead reference in {f.name}: File '{filepath}' does not exist!")
                 dead_links += 1
 
+    # Zero-Apology Rule (Lauren Tan Principle): Flag newly introduced TODO/FIXME/HACK comments in recent diff
+    recent_diff = run_cmd("git diff HEAD~1 HEAD") or run_cmd("git diff")
+    escape_hatch_count = 0
+    if recent_diff:
+        escape_pattern = re.compile(r"^\+\s*.*(//|#|/\*)\s*(TODO|FIXME|HACK|WORKAROUND|TEMP|BUG):?", re.IGNORECASE | re.MULTILINE)
+        found = escape_pattern.findall(recent_diff)
+        escape_hatch_count = len(found)
+        if escape_hatch_count > 0:
+            msg = f"⚠️ [ZERO-APOLOGY AUDIT] Found {escape_hatch_count} 'escape hatch' comments (TODO/FIXME/HACK) added in diff! Fix code at root rather than excusing slop."
+            if not silent:
+                print(f"\n{msg}")
+
     if not silent:
         print(f"Reference Audit Complete: {total_links} references verified, {dead_links} dead links found.")
         print("=== CONDENSATION & AUDIT FINISHED ===")
     else:
-        print(f"[Audit Summary]: {total_links} references verified, {dead_links} dead links.")
+        print(f"[Audit Summary]: {total_links} references verified, {dead_links} dead links, {escape_hatch_count} excuse comments.")
+
+
+def cmd_deslop(args):
+    """
+    Codebase Anti-Entropy Sweep (Lauren Tan 'Codebase is Memory' Principle):
+    Audits codebase for:
+    1. Layer DAG leaks (e.g. UI directly importing db/storage/models)
+    2. Nuance-heavy or banned APIs (e.g. unencapsulated raw timers, raw useEffect, raw sync)
+    3. Accumulated TODO/FIXME debt that agents will emulate as canonical style.
+    """
+    print("=== RUNNING CODEBASE ANTI-ENTROPY SWEEP (DE-SLOP) ===")
+    root = Path(".")
+    
+    # 1. Scan for escape hatch comments
+    print("\n[1/3] Scanning for escape-hatch comments (TODO/FIXME/HACK)...")
+    comment_pattern = re.compile(r"\b(TODO|FIXME|HACK|WORKAROUND)\b:?\s*(.*)", re.IGNORECASE)
+    total_excuses = 0
+    scanned_extensions = [".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go", ".cpp", ".h"]
+
+    for ext in scanned_extensions:
+        for p in root.rglob(f"*{ext}"):
+            # ignore hidden, vendor, node_modules, build directories
+            if any(part.startswith(".") or part in ["node_modules", "target", "dist", "build", "venv", ".venv"] for part in p.parts):
+                continue
+            try:
+                for idx, line in enumerate(p.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                    match = comment_pattern.search(line)
+                    if match:
+                        total_excuses += 1
+                        if total_excuses <= 10:
+                            print(f"  • {p}:{idx} -> {match.group(0).strip()[:80]}")
+            except Exception:
+                pass
+
+    if total_excuses > 10:
+        print(f"  ... and {total_excuses - 10} more escape-hatch comments across codebase.")
+    print(f"  Total escape-hatch comments found: {total_excuses}")
+
+    # 2. Scan for layer DAG violations (UI -> DB/Backend)
+    print("\n[2/3] Checking Architectural Seams (UI -> Direct DB/Backend imports)...")
+    ui_patterns = ["src/ui/**", "src/components/**", "src/views/**", "src/frontend/**", "ui/**", "components/**"]
+    dag_violations = 0
+    forbidden_imports = ["db", "database", "sql", "sqlite", "prisma", "typeorm", "storage/direct"]
+
+    for pattern in ui_patterns:
+        for p in root.glob(pattern):
+            if p.is_file() and p.suffix in [".ts", ".tsx", ".js", ".jsx"]:
+                try:
+                    for idx, line in enumerate(p.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                        for bad in forbidden_imports:
+                            if f"from '{bad}" in line or f'from "{bad}' in line or f"import {bad}" in line:
+                                print(f"  🚨 Layer DAG Leak: {p}:{idx} directly imports '{bad}'!")
+                                dag_violations += 1
+                except Exception:
+                    pass
+
+    if dag_violations == 0:
+        print("  ✅ Zero architectural DAG layer leaks detected in UI components.")
+    else:
+        print(f"  ⚠️ Total architectural leaks detected: {dag_violations}")
+
+    # 3. Check for Anti-Patterns ready for Graduation to Linter/Compiler checks
+    print("\n[3/3] Checking Anti-Patterns for Linter/Compiler Graduation...")
+    index = load_index()
+    aps = index.get("anti_patterns", [])
+    grad_count = 0
+    for ap in aps:
+        freq = ap.get("frequency", 1)
+        title = ap.get("title", "")
+        if freq >= 2 or ap.get("critical", False):
+            print(f"  🎓 Candidate for Linter Rule: '{title}' (Occurred {freq}x)")
+            print(f"     Action: Graduate from prose in anti-patterns.md to a custom linter rule or AST check.")
+            grad_count += 1
+
+    if grad_count == 0:
+        print("  ✅ All current anti-patterns are within acceptable frequency limits.")
+    else:
+        print(f"  ⚠️ {grad_count} anti-pattern(s) should be graduated into hard machine-enforced linter rules.")
+
+    print("\n=== DE-SLOP SWEEP COMPLETE ===")
 
 
 def cmd_sync(args):
@@ -522,6 +634,31 @@ def cmd_test(args):
             cmd_auto_tithe(a_args)
             self.assertTrue(auto_file.exists())
             auto_file.unlink()
+
+        def test_deslop_command(self):
+            # Test deslop sweep runs cleanly
+            d_args = argparse.Namespace()
+            cmd_deslop(d_args)
+
+        def test_verification_gate(self):
+            # Test that a passing verification command succeeds
+            v_args = argparse.Namespace(
+                topic="_selftest_verify",
+                domain="TestDomain",
+                summary="Verification gate test",
+                validated="Verification gate",
+                discovery="Pillar 4 execution gate",
+                trap="None observed",
+                invariant="True condition",
+                verify_cmd="python3 -c 'exit(0)'",
+                force=True
+            )
+            cmd_quick_tithe(v_args)
+            verify_file = THREADS_DIR / "thread__selftest_verify.md"
+            self.assertTrue(verify_file.exists())
+            content = verify_file.read_text(encoding="utf-8")
+            self.assertIn("PASSED (exit code 0)", content)
+            verify_file.unlink()
 
     loader = unittest.defaultTestLoader
     suite = loader.loadTestsFromTestCase(SelfTest)
@@ -630,6 +767,7 @@ def main():
     p_qtithe.add_argument("--discovery", type=str, help="Novel discovery or code reference")
     p_qtithe.add_argument("--trap", type=str, help="Anti-pattern observed or avoided")
     p_qtithe.add_argument("--invariant", type=str, help="Contract or invariant preserved")
+    p_qtithe.add_argument("--verify-cmd", type=str, help="Verification command to execute (Lauren Tan 70/30 Verification Law)")
     p_qtithe.add_argument("--force", action="store_true", help="Overwrite existing thread retrospective")
 
     # auto-tithe
@@ -637,6 +775,9 @@ def main():
     p_atithe.add_argument("--topic", type=str, help="Topic / feature name")
     p_atithe.add_argument("--domain", type=str, help="Primary domain")
     p_atithe.add_argument("--trap", type=str, help="Optional anti-pattern to record")
+
+    # deslop (Lauren Tan "Codebase is Memory" sweep)
+    p_deslop = subparsers.add_parser("deslop", help="Run codebase anti-entropy sweep for layer DAG leaks and excuse comments")
 
     # condense
     p_condense = subparsers.add_parser("condense", help="Run algorithmic budget and reference audit")
@@ -661,6 +802,8 @@ def main():
         cmd_quick_tithe(args)
     elif args.subcommand == "auto-tithe":
         cmd_auto_tithe(args)
+    elif args.subcommand == "deslop":
+        cmd_deslop(args)
     elif args.subcommand == "condense":
         cmd_condense(args)
     elif args.subcommand == "sync":

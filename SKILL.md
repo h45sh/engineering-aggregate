@@ -22,8 +22,17 @@ Left unattended, software systems decay through **entropy**: agents repeat old m
 - **Equivalent Exchange (The Tithe)**: Agents return verified empirical intelligence without compromising task focus.
 - **The Result**: With every thread, **flaws decrease, token friction drops, and structural strength increases.**
 
-### B. The 4 Non-Regression Streams
-The system ensures that non-feature engineering disciplines never degrade:
+### B. The 4 Non-Regression Streams & The Trust Pyramid
+The system adheres to **Lauren Tan's Trust Pyramid** (from *All Code Is Slop (Except Mine)*, SpaceXSI/Grok):
+```text
+           ▲   [ Human Review & Oversight ]   <-- Smallest layer; impossible to scale
+          / \  [ Prose Rules / AGENTS.md  ]   <-- Thin layer; high-level intent only
+         /   \ [ Verification & Proofs    ]   <-- 70% budget: automated runtime/CDP tests
+        /     \[ Static Analysis & Linters]   <-- Deterministic compiler/type/AST constraints
+       /_______\[ Pristine Architecture   ]   <-- Base: Deep modules, "pit of success"
+```
+
+Rules never remain mere prose in markdown files if they recur. **The Anti-Pattern Graduation Ladder** mandates that recurring traps graduate into hard linter rules or compiler constraints so agents physically cannot write slop.
 
 ```text
  ┌────────────────────────────────────────────────────────────────────────┐
@@ -46,10 +55,10 @@ The system ensures that non-feature engineering disciplines never degrade:
  └────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Architecture Integrity**: Enforces strict module depth, seam isolation, and layer DAG invariants (e.g. UI never imports database models directly).
+1. **Architecture Integrity & Seam Isolation**: Enforces strict module depth, seam isolation, and layer DAG invariants. Nuance-heavy primitives (raw timers, complex lifecycle hooks, direct database clients) are strictly encapsulated behind narrow seams.
 2. **Security Immunization**: When a vulnerability (SSRF, injection, auth bypass) is patched, the anti-pattern and its verification command are permanently registered so future agents never reintroduce it.
-3. **Refactoring Contracts**: Code cleanups and consolidations preserve functional equivalence by locking in quantitative performance thresholds.
-4. **Knowledge Consolidation**: Algorithmic pruning strips obsolete rules and dead code links, keeping context token-lean.
+3. **Refactoring Contracts & 70% Verification**: Code cleanups and consolidations preserve functional equivalence by locking in quantitative performance thresholds. Claims of correctness require executed verification commands (exit code 0).
+4. **Knowledge Condensation & De-Slop Sweep**: Algorithmic pruning strips obsolete rules and dead code links. The Zero-Apology Rule flags `// TODO`, `// HACK`, or workaround comments—agents must fix issues at the root rather than writing excuse comments.
 
 ---
 
@@ -86,19 +95,26 @@ Execute the requested feature, bugfix, security patch, or refactor. Focus 100% o
 ### Step 3: Paying the Tithe (Post-Implementation — One-Shot Atomic)
 Once tests pass, pay the tithe in **one single command** without conversational round-trip churn:
 ```bash
-python3 scripts/agg.py quick-tithe --summary "<1-line summary>" --domain <UI|Storage|Engine|Auth|Security|Refactor> --validated "<rules_confirmed>" --trap "<what_failed_if_any>"
+python3 scripts/agg.py quick-tithe --summary "<1-line summary>" --domain <UI|Storage|Engine|Auth|Security|Refactor> --validated "<rules_confirmed>" --trap "<what_failed_if_any>" --verify-cmd "<test_or_invariant_command>"
 ```
 - **What happens automatically in $<50$ms:**
-  1. Scaffolds and populates `.agents/threads/thread_<topic>.md` with all 4 Pillars.
-  2. Registers any real anti-pattern into `.agents/knowledge/anti-patterns.md`.
-  3. Synchronizes domain files into `index.json`.
-  4. Runs budget checks and link audits silently.
+  1. **Verification Gate**: Executes `--verify-cmd`. If it fails (exit code $\neq 0$), tithe is aborted.
+  2. Scaffolds and populates `.agents/threads/thread_<topic>.md` with all 4 Pillars.
+  3. Registers any real anti-pattern into `.agents/knowledge/anti-patterns.md`.
+  4. Synchronizes domain files into `index.json`.
+  5. Audits reference links, line budgets, and flags new escape comments (`// TODO`, `// HACK`).
 - **For Background Execution / Subagents**:
   If running via an async subagent or git hook, run:
   ```bash
   python3 scripts/agg.py auto-tithe
   ```
   This extracts the summary and modified files directly from `git log`/`git diff`, keeping the main conversational context 100% clean!
+- **Periodic Codebase Hygiene (De-Slop Sweep)**:
+  To prevent agents from emulating stale hacks or layer leaks, run:
+  ```bash
+  python3 scripts/agg.py deslop
+  ```
+  Audits layer DAG seams, escape comments, and flags anti-patterns ready to graduate into linter/compiler rules.
 
 ---
 
