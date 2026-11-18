@@ -1,0 +1,3 @@
+# Ignore individual thread retrospectives to keep repository git history clean
+.agents/threads/*.md
+!.agents/threads/TEMPLATE.md
